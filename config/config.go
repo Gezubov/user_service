@@ -4,46 +4,60 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/yaml.v3"
+	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	Server   ServerConfig   `yaml:"server"`
-	Database DatabaseConfig `yaml:"database"`
-	JWT      JWTConfig      `yaml:"jwt"`
+	Server   ServerConfig
+	Database DatabaseConfig
+	JWT      JWTConfig
 }
 
 type ServerConfig struct {
-	Port string `yaml:"port"`
+	Port string
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	Username string `yaml:"username"`
-	Password string `yaml:"password"`
-	Database string `yaml:"database"`
+	Host     string
+	Port     string
+	Username string
+	Password string
+	Database string
 }
 
 type JWTConfig struct {
-	Secret     string `yaml:"secret"`
-	Expiration string `yaml:"expiration"`
+	Secret     string
+	Expiration string
 }
 
 var Cfg Config
 
 func Load() {
-	file, err := os.ReadFile("config/config.yaml")
+	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Failed to read config file: %v", err)
+		log.Fatal("Error loading .env file")
 	}
 
-	err = yaml.Unmarshal(file, &Cfg)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal config: %v", err)
+	server := ServerConfig{
+		Port: os.Getenv("APP_PORT"),
+	}
+	database := DatabaseConfig{
+		Host:     os.Getenv("DB_HOST"),
+		Port:     os.Getenv("DB_PORT"),
+		Username: os.Getenv("DB_USER"),
+		Password: os.Getenv("DB_PASSWORD"),
+		Database: os.Getenv("DB_NAME"),
+	}
+	jwt := JWTConfig{
+		Secret:     os.Getenv("SECRET_KEY"),
+		Expiration: os.Getenv("JWT_EXPIRATION"),
 	}
 
-	log.Println("Config loaded successfully")
+	Cfg = Config{
+		Server:   server,
+		Database: database,
+		JWT:      jwt,
+	}
 }
 
 func GetConfig() *Config {

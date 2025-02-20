@@ -9,26 +9,30 @@ import (
 	"github.com/Gezubov/user_service/internal/infrastructure/db"
 	"github.com/Gezubov/user_service/internal/repository"
 	"github.com/Gezubov/user_service/internal/service"
+	"github.com/go-chi/chi"
+
 	_ "github.com/lib/pq"
 )
 
 func main() {
 	config.Load()
-
 	db.InitDB()
-	database := db.GetDB()
 
+	database := db.GetDB()
 	userRepo := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepo)
 	userController := controller.NewUserController(userService)
 
-	http.HandleFunc("/user/get", userController.GetUser)
-	http.HandleFunc("/user/create", userController.CreateUser)
-	http.HandleFunc("/user/update", userController.UpdateUser)
-	http.HandleFunc("/user/delete", userController.DeleteUser)
-	http.HandleFunc("/user/list", userController.GetUsers)
+	r := chi.NewRouter()
+	r.Get("/user", userController.GetUser)
+	r.Post("/user", userController.CreateUser)
+	r.Patch("/user/{id}", userController.UpdateUser)
+	r.Delete("/user/{id}", userController.DeleteUser)
+	r.Get("/users", userController.GetUsers)
 
-	serverAddr := ":" + config.GetConfig().Server.Port
-	log.Printf("Server started on port %s", config.GetConfig().Server.Port)
-	log.Fatal(http.ListenAndServe(serverAddr, nil))
+	port := config.GetConfig().Server.Port
+	serverAddr := ":" + port
+
+	log.Printf("Server started on port %s", port)
+	log.Fatal(http.ListenAndServe(serverAddr, r))
 }
