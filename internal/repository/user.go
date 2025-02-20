@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 
-	"github.com/Gezubov/file_storage/internal/models"
+	"github.com/Gezubov/user_service/internal/models"
 )
 
 type UserRepository struct {

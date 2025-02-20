@@ -1,6 +1,6 @@
 package service
 
-import "github.com/Gezubov/file_storage/internal/models"
+import "github.com/Gezubov/user_service/internal/models"
 
 type UserRepository interface {
 	Create(user *models.User) error

@@ -1,5 +1,5 @@
-module github.com/Gezubov/file_storage
+module github.com/Gezubov/user_service
 
 go 1.23.5
 
-require gopkg.in/yaml.v3 v3.0.1 // indirect
+require gopkg.in/yaml.v3 v3.0.1

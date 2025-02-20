@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Gezubov/file_storage/config"
+	"github.com/Gezubov/user_service/config"
 )
 
 var db *sql.DB
