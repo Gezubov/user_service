@@ -18,11 +18,11 @@ func InitDB() {
 
 	var err error
 
-	db, err = sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	log.Println("Connected to database")
+	log.Println("Connecting to database...")
 
 	err = db.Ping()
 	if err != nil {

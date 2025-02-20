@@ -4,12 +4,16 @@
 
 ```
 ├── cmd/
-│   └── main.go
+│   └── app/
+│       └── app.go
 ├── config/
 │   ├── config.go
 │   └── config.yaml
 ├── internal/
 │   ├── controller/
+│   │   ├── errors.go
+│   │   ├── interfaces.go
+│   │   └── user.go
 │   ├── infrastructure/
 │   │   └── db/
 │   │       └── db.go
@@ -17,6 +21,7 @@
 │   ├── models/
 │   │   └── user.go
 │   ├── repository/
+│   │   ├── errors.go
 │   │   └── user.go
 │   └── service/
 │       ├── interfaces.go
