@@ -3,20 +3,26 @@
 ## Project Structure
 
 ```
-├── user-service/
-│   ├── cmd/
-│   │   └── main.go
-│   ├── config/
-│   │   ├── config.go
-│   │   └── config.yaml
-│   ├── internal/
-│   │   ├── controller/
-│   │   ├── middleware/
-│   │   ├── models/
-│   │   ├── repository/
-│   │   └── service/
-│   ├── migrations/
-│   └── pkg/
+├── cmd/
+│   └── main.go
+├── config/
+│   ├── config.go
+│   └── config.yaml
+├── internal/
+│   ├── controller/
+│   ├── infrastructure/
+│   │   └── db/
+│   │       └── db.go
+│   ├── middleware/
+│   ├── models/
+│   │   └── user.go
+│   ├── repository/
+│   │   └── user.go
+│   └── service/
+│       ├── interfaces.go
+│       └── user.go
+├── migrations/
+├── pkg/
 ├── README.md
 ├── go.mod
 └── go.sum

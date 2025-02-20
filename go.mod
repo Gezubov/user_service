@@ -1,4 +1,4 @@
-module file_storage
+module github.com/Gezubov/file_storage
 
 go 1.23.5
 
