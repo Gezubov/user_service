@@ -2,9 +2,9 @@ package repository
 
 import (
 	"database/sql"
-	"time"
 
-	"log"
+	"log/slog"
+	"time"
 
 	"github.com/Gezubov/user_service/internal/models"
 )
@@ -18,7 +18,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(user *models.User) error {
-	log.Printf("Creating user: %s", user.Username)
+	slog.Info("Creating user", "username", user.Username)
 	query := `
 		INSERT INTO users (username, email, password, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $4)
@@ -34,6 +34,7 @@ func (r *UserRepository) Create(user *models.User) error {
 	).Scan(&user.ID)
 
 	if err != nil {
+		slog.Error("Error creating user", "error", err)
 		return err
 	}
 
@@ -43,7 +44,7 @@ func (r *UserRepository) Create(user *models.User) error {
 }
 
 func (r *UserRepository) GetByID(id int64) (*models.User, error) {
-	log.Printf("Getting user with ID: %d", id)
+	slog.Info("Getting user with ID", "id", id)
 	user := &models.User{}
 	query := `
 		SELECT id, username, email, created_at, updated_at
@@ -59,9 +60,11 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 	)
 
 	if err == sql.ErrNoRows {
+		slog.Warn("User not found", "id", id)
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
+		slog.Error("Error fetching user", "id", id, "error", err)
 		return nil, err
 	}
 
@@ -69,7 +72,7 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 }
 
 func (r *UserRepository) Update(user *models.User) error {
-	log.Printf("Updating user with ID: %d", user.ID)
+	slog.Info("Updating user", "id", user.ID)
 	query := `
 		UPDATE users
 		SET username = $1, email = $2, password = $3, updated_at = $4
@@ -84,14 +87,19 @@ func (r *UserRepository) Update(user *models.User) error {
 		user.ID,
 	)
 	if err != nil {
+		slog.Error("Error updating user", "id", user.ID, "error", err)
+
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("Error checking update result", "id", user.ID, "error", err)
+
 		return err
 	}
 	if rowsAffected == 0 {
+		slog.Warn("No rows updated", "id", user.ID)
 		return ErrUserNotFound
 	}
 
@@ -99,19 +107,22 @@ func (r *UserRepository) Update(user *models.User) error {
 }
 
 func (r *UserRepository) Delete(id int64) error {
-	log.Printf("Deleting user with ID: %d", id)
+	slog.Info("Deleting user", "id", id)
 	query := `DELETE FROM users WHERE id = $1`
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {
+		slog.Error("Error deleting user", "id", id, "error", err)
 		return err
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
+		slog.Error("Error checking delete result", "id", id, "error", err)
 		return err
 	}
 	if rowsAffected == 0 {
+		slog.Warn("User not found during deletion", "id", id)
 		return ErrUserNotFound
 	}
 
@@ -119,11 +130,13 @@ func (r *UserRepository) Delete(id int64) error {
 }
 
 func (r *UserRepository) GetAllUsers() ([]models.User, error) {
-	log.Println("Getting all users")
-	query := `SELECT id, username, email, created_at, updated_at FROM users`
+	slog.Info("Fetching all users from database")
 
+	query := `SELECT id, username, email, created_at, updated_at FROM users`
 	rows, err := r.db.Query(query)
+
 	if err != nil {
+		slog.Error("Error executing query to fetch users", "error", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -132,14 +145,17 @@ func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 	for rows.Next() {
 		var user models.User
 		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			slog.Error("Error scanning user row", "error", err)
 			return nil, err
 		}
 		users = append(users, user)
 	}
 
 	if err := rows.Err(); err != nil {
+		slog.Error("Error iterating over user rows", "error", err)
 		return nil, err
 	}
 
+	slog.Info("Successfully fetched users", "count", len(users))
 	return users, nil
 }

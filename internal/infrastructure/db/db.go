@@ -3,7 +3,7 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/Gezubov/user_service/config"
@@ -26,25 +26,25 @@ func InitDB() {
 
 	db, err = sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+		slog.Error("Failed to connect to database", "error", err)
 	}
-	log.Println("Connecting to database...")
+	slog.Info("Connecting to database...")
 
 	for i := 0; i < 5; i++ {
 		err = db.Ping()
 		if err == nil {
 			break
 		}
-		log.Printf("Failed to ping database, retrying in 5 seconds... Error: %v", err)
+		slog.Error("Failed to ping database, retrying in 5 seconds... Error: %v", err)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
-		log.Fatalf("Failed to ping database after 5 retries: %v", err)
+		slog.Error("Failed to ping database after 5 retries: %v", err)
 	}
-	log.Println("Database is ready")
+	slog.Info("Database connection established")
 }
 
 func GetDB() *sql.DB {
-	log.Println("Getting database connection")
+	slog.Info("Returning database connection")
 	return db
 }

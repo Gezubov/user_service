@@ -86,8 +86,6 @@ func (c *UserController) GetUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(users)
-
-	w.WriteHeader(http.StatusNotImplemented)
 }
 
 func (c *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {

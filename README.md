@@ -5,10 +5,9 @@
 ```
 ├── cmd/
 │   └── app/
-│       └── app.go
+│       └── main.go
 ├── config/
-│   ├── config.go
-│   └── config.yaml
+│   └── config.go
 ├── internal/
 │   ├── controller/
 │   │   ├── errors.go
@@ -17,7 +16,8 @@
 │   ├── infrastructure/
 │   │   └── db/
 │   │       └── db.go
-│   ├── middleware/
+│   ├── middlewares/
+│   │   └── cors.go
 │   ├── models/
 │   │   └── user.go
 │   ├── repository/
@@ -28,7 +28,9 @@
 │       └── user.go
 ├── migrations/
 ├── pkg/
+├── Dockerfile
 ├── README.md
+├── docker-compose.yaml
 ├── go.mod
 └── go.sum
 ```
