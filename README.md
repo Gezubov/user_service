@@ -17,6 +17,7 @@
 │   │   └── db/
 │   │       └── db.go
 │   ├── middlewares/
+│   │   ├── auth.go
 │   │   └── cors.go
 │   ├── models/
 │   │   └── user.go
@@ -27,7 +28,11 @@
 │       ├── interfaces.go
 │       └── user.go
 ├── migrations/
+│   ├── 20250221132128_add_users_table.sql
+│   └── 20250221141157_add_users_table.sql
 ├── pkg/
+│   └── hash/
+│       └── hash.go
 ├── Dockerfile
 ├── README.md
 ├── docker-compose.yaml
