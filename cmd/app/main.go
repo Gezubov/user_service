@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/Gezubov/user_service/config"
 	"github.com/Gezubov/user_service/internal/controller"
@@ -26,23 +30,57 @@ func main() {
 
 	slog.Info("Initializing database...")
 	db.InitDB()
-
 	database := db.GetDB()
+
 	userRepo := repository.NewUserRepository(database)
 	userService := service.NewUserService(userRepo)
 	userController := controller.NewUserController(userService)
 
-	r := chi.NewRouter()
-	r.Use(middlewares.CorsMiddleware())
-	r.Post("/user", userController.CreateUser)
-	r.Get("/user/{id}", userController.GetUser)
-	r.Patch("/user/{id}", userController.UpdateUser)
-	r.Delete("/user/{id}", userController.DeleteUser)
-	r.Get("/users", userController.GetUsers)
+	r := SetupRoutes(userController)
 
 	port := config.GetConfig().Server.Port
 	serverAddr := ":" + port
+	srv := &http.Server{
+		Addr:    serverAddr,
+		Handler: r,
+	}
 
-	slog.Info("Server started", "port", port)
-	slog.Error("Server crashed", "error", http.ListenAndServe(serverAddr, r))
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		slog.Info("Server started", "port", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("Server crashed", "error", err)
+		}
+	}()
+
+	<-stop
+	slog.Info("Shutting down server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		slog.Error("Server forced to shutdown", "error", err)
+	} else {
+		slog.Info("Server exited properly")
+	}
+
+	db.CloseDB()
+}
+
+func SetupRoutes(userController *controller.UserController) *chi.Mux {
+	r := chi.NewRouter()
+	r.Use(middlewares.CorsMiddleware())
+
+	r.Route("/user", func(r chi.Router) {
+		r.Post("/", userController.CreateUser)
+		r.Get("/{id}", userController.GetUser)
+		r.Patch("/{id}", userController.UpdateUser)
+		r.Delete("/{id}", userController.DeleteUser)
+	})
+	r.Get("/users", userController.GetUsers)
+
+	return r
 }

@@ -14,7 +14,6 @@ var db *sql.DB
 func InitDB() {
 	dbHost := config.GetConfig().Database.Host
 	dbPort := config.GetConfig().Database.Port
-	fmt.Println("port and host > ", dbHost, dbPort)
 	dbUser := config.GetConfig().Database.Username
 	dbPassword := config.GetConfig().Database.Password
 	dbName := config.GetConfig().Database.Database
@@ -28,18 +27,18 @@ func InitDB() {
 	if err != nil {
 		slog.Error("Failed to connect to database", "error", err)
 	}
-	slog.Info("Connecting to database...")
 
+	slog.Info("Connecting to database...")
 	for i := 0; i < 5; i++ {
 		err = db.Ping()
 		if err == nil {
 			break
 		}
-		slog.Error("Failed to ping database, retrying in 5 seconds... Error: %v", err)
+		slog.Error("Failed to ping database, retrying in 5 seconds...", "error", err)
 		time.Sleep(2 * time.Second)
 	}
 	if err != nil {
-		slog.Error("Failed to ping database after 5 retries: %v", err)
+		slog.Error("Failed to ping database after 5 retries", "error", err)
 	}
 	slog.Info("Database connection established")
 }
@@ -47,4 +46,15 @@ func InitDB() {
 func GetDB() *sql.DB {
 	slog.Info("Returning database connection")
 	return db
+}
+
+func CloseDB() {
+	if db != nil {
+		slog.Info("Closing database connection...")
+		if err := db.Close(); err != nil {
+			slog.Error("Error closing database", "error", err)
+		} else {
+			slog.Info("Database connection closed")
+		}
+	}
 }
