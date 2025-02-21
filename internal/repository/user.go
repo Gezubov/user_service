@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"time"
 
+	"log"
+
 	"github.com/Gezubov/user_service/internal/models"
 )
 
@@ -16,6 +18,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 }
 
 func (r *UserRepository) Create(user *models.User) error {
+	log.Printf("Creating user: %s", user.Username)
 	query := `
 		INSERT INTO users (username, email, password, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $4)
@@ -40,6 +43,7 @@ func (r *UserRepository) Create(user *models.User) error {
 }
 
 func (r *UserRepository) GetByID(id int64) (*models.User, error) {
+	log.Printf("Getting user with ID: %d", id)
 	user := &models.User{}
 	query := `
 		SELECT id, username, email, created_at, updated_at
@@ -65,6 +69,7 @@ func (r *UserRepository) GetByID(id int64) (*models.User, error) {
 }
 
 func (r *UserRepository) Update(user *models.User) error {
+	log.Printf("Updating user with ID: %d", user.ID)
 	query := `
 		UPDATE users
 		SET username = $1, email = $2, password = $3, updated_at = $4
@@ -94,6 +99,7 @@ func (r *UserRepository) Update(user *models.User) error {
 }
 
 func (r *UserRepository) Delete(id int64) error {
+	log.Printf("Deleting user with ID: %d", id)
 	query := `DELETE FROM users WHERE id = $1`
 
 	result, err := r.db.Exec(query, id)
@@ -110,4 +116,30 @@ func (r *UserRepository) Delete(id int64) error {
 	}
 
 	return nil
+}
+
+func (r *UserRepository) GetAllUsers() ([]models.User, error) {
+	log.Println("Getting all users")
+	query := `SELECT id, username, email, created_at, updated_at FROM users`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := []models.User{}
+	for rows.Next() {
+		var user models.User
+		if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return users, nil
 }

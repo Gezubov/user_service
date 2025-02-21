@@ -7,6 +7,7 @@ import (
 
 	"github.com/Gezubov/user_service/internal/models"
 	"github.com/Gezubov/user_service/internal/service"
+	"github.com/go-chi/chi"
 )
 
 type UserController struct {
@@ -51,7 +52,7 @@ func (c *UserController) GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return
@@ -78,17 +79,24 @@ func (c *UserController) GetUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Реализовать получение списка пользователей
+	users, err := c.userService.GetAllUsers()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(users)
+
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 func (c *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPut {
+	if r.Method != http.MethodPatch {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return
@@ -121,7 +129,7 @@ func (c *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idStr := r.URL.Query().Get("id")
+	idStr := chi.URLParam(r, "id")
 	if idStr == "" {
 		http.Error(w, "User ID is required", http.StatusBadRequest)
 		return

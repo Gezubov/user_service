@@ -45,5 +45,6 @@ func InitDB() {
 }
 
 func GetDB() *sql.DB {
+	log.Println("Getting database connection")
 	return db
 }
