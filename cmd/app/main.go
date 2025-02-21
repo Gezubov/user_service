@@ -74,11 +74,15 @@ func SetupRoutes(userController *controller.UserController) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middlewares.CorsMiddleware())
 
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/register", userController.Register)
+		r.Post("/login", userController.Login)
+	})
+
 	r.Route("/user", func(r chi.Router) {
-		r.Post("/", userController.CreateUser)
 		r.Get("/{id}", userController.GetUser)
-		r.Patch("/{id}", userController.UpdateUser)
-		r.Delete("/{id}", userController.DeleteUser)
+		r.With(middlewares.AuthMiddleware).Patch("/{id}", userController.UpdateUser)
+		r.With(middlewares.AuthMiddleware).Delete("/{id}", userController.DeleteUser)
 	})
 	r.Get("/users", userController.GetUsers)
 

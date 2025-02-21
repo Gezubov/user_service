@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -27,7 +28,7 @@ type DatabaseConfig struct {
 
 type JWTConfig struct {
 	Secret     string
-	Expiration string
+	Expiration int
 }
 
 var Cfg Config
@@ -48,9 +49,10 @@ func Load() {
 		Password: os.Getenv("DB_PASSWORD"),
 		Database: os.Getenv("DB_NAME"),
 	}
+
 	jwt := JWTConfig{
 		Secret:     os.Getenv("SECRET_KEY"),
-		Expiration: os.Getenv("JWT_EXPIRATION"),
+		Expiration: getEnvAsInt("JWT_EXPIRATION", 3600),
 	}
 
 	Cfg = Config{
@@ -62,4 +64,12 @@ func Load() {
 
 func GetConfig() *Config {
 	return &Cfg
+}
+
+func getEnvAsInt(key string, defaultVal int) int {
+	valStr := os.Getenv(key)
+	if val, err := strconv.Atoi(valStr); err == nil {
+		return val
+	}
+	return defaultVal
 }
