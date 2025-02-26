@@ -1,6 +1,7 @@
-package repository
+package storage
 
 import (
+	"context"
 	"database/sql"
 
 	"log/slog"
@@ -8,17 +9,19 @@ import (
 
 	"github.com/Gezubov/user_service/internal/models"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 )
 
-type UserRepository struct {
-	db *sql.DB
+type UserStorage struct {
+	db  *pgx.Conn
+	ctx context.Context
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserStorage(ctx context.Context, db *pgx.Conn) *UserStorage {
+	return &UserStorage{ctx: ctx, db: db}
 }
 
-func (r *UserRepository) Create(user *models.User) error {
+func (r *UserStorage) Create(ctx context.Context, user *models.User) error {
 	slog.Info("Creating user", "username", user.Username)
 	query := `
 		INSERT INTO users (uuid, username, email, password_hash, role, created_at, updated_at)
@@ -27,7 +30,7 @@ func (r *UserRepository) Create(user *models.User) error {
 
 	now := time.Now()
 	user.UUID = uuid.New()
-	err := r.db.QueryRow(
+	err := r.db.QueryRow(ctx,
 		query,
 		user.UUID,
 		user.Username,
@@ -48,7 +51,7 @@ func (r *UserRepository) Create(user *models.User) error {
 	return nil
 }
 
-func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*models.User, error) {
+func (r *UserStorage) GetByUUID(ctx context.Context, uuid uuid.UUID) (*models.User, error) {
 	slog.Info("Getting user with UUID", "uuid", uuid)
 	user := &models.User{}
 
@@ -57,7 +60,7 @@ func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*models.User, error) {
 		FROM users
 		WHERE uuid = $1`
 
-	err := r.db.QueryRow(query, uuid).Scan(
+	err := r.db.QueryRow(ctx, query, uuid).Scan(
 		&user.UUID,
 		&user.Username,
 		&user.Email,
@@ -79,7 +82,7 @@ func (r *UserRepository) GetByUUID(uuid uuid.UUID) (*models.User, error) {
 	return user, nil
 }
 
-func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
+func (r *UserStorage) GetByEmail(ctx context.Context, email string) (*models.User, error) {
 	slog.Info("Getting user with email", "email", email)
 	user := &models.User{}
 
@@ -87,7 +90,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	FROM users 
 	WHERE email = $1`
 
-	err := r.db.QueryRow(query, email).Scan(
+	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.UUID,
 		&user.Username,
 		&user.Email,
@@ -102,7 +105,7 @@ func (r *UserRepository) GetByEmail(email string) (*models.User, error) {
 	return user, err
 }
 
-func (r *UserRepository) Update(user *models.User) error {
+func (r *UserStorage) Update(ctx context.Context, user *models.User) error {
 	slog.Info("Updating user", "uuid", user.UUID)
 	query := `
 		UPDATE users
@@ -110,6 +113,7 @@ func (r *UserRepository) Update(user *models.User) error {
 		WHERE uuid = $6`
 
 	result, err := r.db.Exec(
+		ctx,
 		query,
 		user.Username,
 		user.Email,
@@ -124,12 +128,12 @@ func (r *UserRepository) Update(user *models.User) error {
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		slog.Error("Error checking update result", "uuid", user.UUID, "error", err)
+	rowsAffected := result.RowsAffected()
+	// if err != nil {
+	// 	slog.Error("Error checking update result", "uuid", user.UUID, "error", err)
 
-		return err
-	}
+	// 	return err
+	// }
 	if rowsAffected == 0 {
 		slog.Warn("No rows updated", "uuid", user.UUID)
 		return ErrUserNotFound
@@ -138,21 +142,21 @@ func (r *UserRepository) Update(user *models.User) error {
 	return nil
 }
 
-func (r *UserRepository) Delete(uuid uuid.UUID) error {
+func (r *UserStorage) Delete(ctx context.Context, uuid uuid.UUID) error {
 	slog.Info("Deleting user", "uuid", uuid)
 	query := `DELETE FROM users WHERE uuid = $1`
 
-	result, err := r.db.Exec(query, uuid)
+	result, err := r.db.Exec(ctx, query, uuid)
 	if err != nil {
 		slog.Error("Error deleting user", "uuid", uuid, "error", err)
 		return err
 	}
 
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		slog.Error("Error checking delete result", "uuid", uuid, "error", err)
-		return err
-	}
+	rowsAffected := result.RowsAffected()
+	// if err != nil {
+	// 	slog.Error("Error checking delete result", "uuid", uuid, "error", err)
+	// 	return err
+	// }
 	if rowsAffected == 0 {
 		slog.Warn("User not found during deletion", "uuid", uuid)
 		return ErrUserNotFound
@@ -161,11 +165,11 @@ func (r *UserRepository) Delete(uuid uuid.UUID) error {
 	return nil
 }
 
-func (r *UserRepository) GetAllUsers() ([]models.User, error) {
+func (r *UserStorage) GetAllUsers(ctx context.Context) ([]models.User, error) {
 	slog.Info("Fetching all users from database")
 
 	query := `SELECT uuid, username, email, role, created_at, updated_at FROM users`
-	rows, err := r.db.Query(query)
+	rows, err := r.db.Query(ctx, query)
 
 	if err != nil {
 		slog.Error("Error executing query to fetch users", "error", err)
@@ -192,7 +196,7 @@ func (r *UserRepository) GetAllUsers() ([]models.User, error) {
 	return users, nil
 }
 
-func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
+func (r *UserStorage) GetByUsername(ctx context.Context, username string) (*models.User, error) {
 	slog.Info("Getting user with username", "username", username)
 	user := &models.User{}
 
@@ -200,7 +204,7 @@ func (r *UserRepository) GetByUsername(username string) (*models.User, error) {
 	FROM users 
 	WHERE username = $1`
 
-	err := r.db.QueryRow(query, username).Scan(
+	err := r.db.QueryRow(ctx, query, username).Scan(
 		&user.UUID,
 		&user.Username,
 		&user.Email,

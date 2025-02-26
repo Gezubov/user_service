@@ -10,8 +10,6 @@
 │   └── config.go
 ├── internal/
 │   ├── controller/
-│   │   ├── errors.go
-│   │   ├── interfaces.go
 │   │   └── user.go
 │   ├── infrastructure/
 │   │   └── db/
@@ -21,22 +19,20 @@
 │   │   └── cors.go
 │   ├── models/
 │   │   └── user.go
-│   ├── repository/
-│   │   ├── errors.go
+│   ├── service/
 │   │   └── user.go
-│   └── service/
-│       ├── interfaces.go
+│   └── storage/
+│       ├── errors.go
 │       └── user.go
 ├── migrations/
 │   ├── 20250221132128_add_users_table.sql
 │   └── 20250221141157_add_users_table.sql
 ├── pkg/
-│   └── hash/
-│       └── hash.go
 ├── Dockerfile
 ├── README.md
 ├── docker-compose.yaml
 ├── go.mod
 └── go.sum
+
 ```
 

@@ -13,11 +13,9 @@ import (
 	"github.com/Gezubov/user_service/internal/controller"
 	"github.com/Gezubov/user_service/internal/infrastructure/db"
 	"github.com/Gezubov/user_service/internal/middlewares"
-	"github.com/Gezubov/user_service/internal/repository"
 	"github.com/Gezubov/user_service/internal/service"
+	"github.com/Gezubov/user_service/internal/storage"
 	"github.com/go-chi/chi"
-
-	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -28,13 +26,15 @@ func main() {
 	slog.Info("Loading configuration...")
 	config.Load()
 
+	ctx := context.Background()
+
 	slog.Info("Initializing database...")
-	db.InitDB()
+	db.InitDB(ctx, &config.GetConfig().Database)
 	database := db.GetDB()
 
-	userRepo := repository.NewUserRepository(database)
-	userService := service.NewUserService(userRepo)
-	userController := controller.NewUserController(userService)
+	userRepo := storage.NewUserStorage(ctx, database)
+	userService := service.NewUserService(ctx, userRepo)
+	userController := controller.NewUserController(ctx, userService)
 
 	r := SetupRoutes(userController)
 
@@ -58,7 +58,7 @@ func main() {
 	<-stop
 	slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -67,7 +67,7 @@ func main() {
 		slog.Info("Server exited properly")
 	}
 
-	db.CloseDB()
+	db.CloseDB(ctx)
 }
 
 func SetupRoutes(userController *controller.UserController) *chi.Mux {
